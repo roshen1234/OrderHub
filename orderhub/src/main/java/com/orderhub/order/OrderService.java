@@ -6,6 +6,7 @@ import com.orderhub.cart.Repository.CartRepository;
 import com.orderhub.catalog.DTO.PageResponse;
 import com.orderhub.catalog.Product;
 import com.orderhub.common.exception.EmptyCartException;
+import com.orderhub.common.exception.InvalidOrderTransitionException;
 import com.orderhub.common.exception.ResourceNotFoundException;
 import com.orderhub.inventory.InventoryService;
 import com.orderhub.order.DTO.OrderResponse;
@@ -134,6 +135,39 @@ public class OrderService {
         Order order=orderRepo.findAllByUserIdAndId(user.getId(),id).orElseThrow(()->new ResourceNotFoundException("Order",id));
 
         return OrderResponse.from(order);
+    }
+
+    @Transactional
+    public void cancelOrder(String email, Long id) {
+        User user=userRepository.findByEmail(email).orElseThrow(()->new UsernameNotFoundException("User not found"));
+        Order order=orderRepo.findAllByUserIdAndId(user.getId(),id).orElseThrow(()->new ResourceNotFoundException("Order",id));
+
+        OrderStatus from = order.getStatus();
+        if (!from.canMoveTo(OrderStatus.CANCELLED)) {
+            throw new InvalidOrderTransitionException(from, OrderStatus.CANCELLED);
+        }
+
+        // atomic: only one request can move the order out of `from`
+        if (orderRepo.transition(id, from, OrderStatus.CANCELLED) == 0) {
+            throw new InvalidOrderTransitionException(from, OrderStatus.CANCELLED);
+        }
+
+        releaseStock(order);
+        saveHistory(order, from, OrderStatus.CANCELLED);
+    }
+
+    private void releaseStock(Order order) {
+        order.getItems().stream()
+                .sorted(Comparator.comparing(i -> i.getProduct().getId()))
+                .forEach(i -> inventoryService.release(i.getProduct().getId(), i.getQuantity()));
+    }
+
+    private void saveHistory(Order order, OrderStatus from, OrderStatus to) {
+        OrderStatusHistory h = new OrderStatusHistory();
+        h.setOrder(order);
+        h.setFromStatus(from);
+        h.setToStatus(to);
+        orderStatusHistoryRepo.save(h);
     }
 
 }

@@ -42,4 +42,10 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.OK).body(orderService.fetchOrder(authentication.getName(),id));
     }
 
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<Void> cancel(@PathVariable Long id, Authentication authentication) {
+        orderService.cancelOrder(authentication.getName(), id);
+        return ResponseEntity.noContent().build();
+    }
+
 }

@@ -62,4 +62,10 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", ex.getMessage()));
     }
 
+    @ExceptionHandler(InvalidOrderTransitionException .class)
+    public ResponseEntity<Map<String, String>> handleInvalidTransition(InvalidOrderTransitionException ex) {
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", ex.getMessage()));
+    }
+
 }
