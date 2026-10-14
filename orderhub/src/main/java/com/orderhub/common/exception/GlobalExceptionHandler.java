@@ -55,4 +55,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest()
                 .body(Map.of("error", "Malformed or incomplete JSON request body"));
     }
+
+    @ExceptionHandler(EmptyCartException.class)
+    public ResponseEntity<Map<String, String>> handleEmptyCart(EmptyCartException ex) {
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", ex.getMessage()));
+    }
+
 }

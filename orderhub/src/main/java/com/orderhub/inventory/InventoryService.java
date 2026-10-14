@@ -40,4 +40,19 @@ public class InventoryService {
         return StockResponse.from(inventory);
     }
 
+    @Transactional
+    public void reserve(Long productId, int qty) {
+        if (inventoryRepository.reserve(productId, qty) == 0) {
+            throw new InsufficientStockException(productId);
+        }
+    }
+
+    @Transactional
+    public void release(Long productId, int qty) {
+        if (inventoryRepository.release(productId, qty) == 0) {
+            throw new IllegalStateException(
+                    "Cannot release " + qty + " units for product " + productId + ": not enough reserved stock");
+        }
+    }
+
 }
