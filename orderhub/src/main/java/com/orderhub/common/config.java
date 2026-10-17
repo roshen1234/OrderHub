@@ -56,6 +56,8 @@ public class config {
                         .requestMatchers("/login").permitAll()
                         .requestMatchers("/refresh").permitAll()
                         .requestMatchers("/logout").permitAll()
+                        .requestMatchers("/dev/gateway/simulate").permitAll()
+                        .requestMatchers("/payments/webhook").permitAll()
                         .requestMatchers(HttpMethod.GET, "/categories/**", "/products/**").permitAll()
                         .anyRequest().authenticated());
 

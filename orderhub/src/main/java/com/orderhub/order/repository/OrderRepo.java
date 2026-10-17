@@ -2,12 +2,10 @@ package com.orderhub.order.repository;
 
 import com.orderhub.order.OrderStatus;
 import com.orderhub.order.entity.Order;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
@@ -37,5 +35,17 @@ public interface OrderRepo extends JpaRepository<Order, Long> {
            "    AND o.id= :orderId"
     )
     Optional<Order> findAllByUserIdAndId(@Param("userId") Long userId,@Param("orderId") Long orderId);
+
+
+    // OrderRepository
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT o FROM Order o WHERE o.id = :id")
+    Optional<Order> findByIdForUpdate(@Param("id") Long id);
+
+    @Modifying
+    @Query("UPDATE Order o SET o.status = :next " +
+            "WHERE o.id = :id AND o.status = :expected AND o.expiresAt > :now")
+    int transitionBeforeExpiry(@Param("id") Long id, @Param("expected") OrderStatus expected,
+                               @Param("next") OrderStatus next, @Param("now") LocalDateTime now);
 
 }
