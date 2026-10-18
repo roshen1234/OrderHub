@@ -25,6 +25,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -182,6 +183,61 @@ public class OrderService {
         h.setToStatus(to);
         orderStatusHistoryRepo.save(h);
     }
+
+    @Transactional
+    public void shipOrder(Long orderId) {
+        Order order = orderRepo.findWithItemsById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
+
+        OrderStatus from = order.getStatus();
+        moveTo(orderId, from, OrderStatus.SHIPPED);      // checks the rule, then the conditional update
+
+        // only the request that won the status change reaches this point
+        order.getItems().stream()
+                .sorted(Comparator.comparing(i -> i.getProduct().getId()))
+                .forEach(i -> inventoryService.confirmShipment(i.getProduct().getId(), i.getQuantity()));
+
+        saveHistory(order, from, OrderStatus.SHIPPED);
+    }
+
+    @Transactional
+    public void deliverOrder(Long orderId) {
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
+
+        OrderStatus from = order.getStatus();
+        moveTo(orderId, from, OrderStatus.DELIVERED);
+        saveHistory(order, from, OrderStatus.DELIVERED);
+    }
+
+    private void moveTo(Long orderId, OrderStatus from, OrderStatus to) {
+        if (!from.canMoveTo(to)) {
+            throw new InvalidOrderTransitionException(from, to);
+        }
+        if (orderRepo.transition(orderId, from, to) == 0) {      // lost a race with another request
+            throw new InvalidOrderTransitionException(from, to);
+        }
+    }
+
+    @Transactional
+    public PageResponse<OrderResponse> getAllOrders(Pageable pageable)
+    {
+        Page<Order> orderPage= orderRepo.findAll(pageable);
+        Page<OrderResponse> responsePage=orderPage.map(order->OrderResponse.from(order));
+
+        return PageResponse.from(responsePage);
+
+    }
+
+    @Transactional
+    public OrderResponse getOrderById(Long id)
+    {
+        Order order=orderRepo.findById(id).orElseThrow(()->new ResourceNotFoundException("Order",id));
+
+        return OrderResponse.from(order);
+
+    }
+
 
 
 }

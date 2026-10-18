@@ -59,6 +59,7 @@ public class config {
                         .requestMatchers("/dev/gateway/simulate").permitAll()
                         .requestMatchers("/payments/webhook").permitAll()
                         .requestMatchers(HttpMethod.GET, "/categories/**", "/products/**").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated());
 
         http.httpBasic(hb->hb.disable());

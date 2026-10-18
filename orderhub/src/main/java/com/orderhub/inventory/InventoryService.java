@@ -55,4 +55,12 @@ public class InventoryService {
         }
     }
 
+    @Transactional
+    public void confirmShipment(Long productId, int qty) {
+        if (inventoryRepository.confirmShipment(productId, qty) == 0) {
+            throw new IllegalStateException(
+                    "Cannot release " + qty + " units for product " + productId + ": not enough reserved stock");
+        }
+    }
+
 }
