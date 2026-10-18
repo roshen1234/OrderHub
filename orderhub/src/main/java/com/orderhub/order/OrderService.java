@@ -16,13 +16,18 @@ import com.orderhub.order.entity.OrderItem;
 import com.orderhub.order.entity.OrderStatusHistory;
 import com.orderhub.order.repository.OrderRepo;
 import com.orderhub.order.repository.OrderStatusHistoryRepo;
+import com.orderhub.payment.PaymentStatus;
+import com.orderhub.payment.entity.Payment;
+import com.orderhub.payment.repositories.PaymentRepository;
 import com.orderhub.user.User;
 import com.orderhub.user.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -34,6 +39,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService {
 
     public final UserRepository userRepository;
@@ -41,6 +47,7 @@ public class OrderService {
     public final InventoryService inventoryService;
     public final OrderRepo orderRepo;
     public final OrderStatusHistoryRepo orderStatusHistoryRepo;
+    public final PaymentRepository paymentRepository;
 
 
     @Value("${orderhub.order.reservation-minutes}")
@@ -138,22 +145,28 @@ public class OrderService {
     }
 
     @Transactional
-    public void cancelOrder(String email, Long id) {
-        User user=userRepository.findByEmail(email).orElseThrow(()->new UsernameNotFoundException("User not found"));
-        Order order=orderRepo.findAllByUserIdAndId(user.getId(),id).orElseThrow(()->new ResourceNotFoundException("Order",id));
+    public void cancelOrder(String email, Long orderId) {
+        Order order = orderRepo.findByIdForUpdate(orderId)          // lock first, like payment start does
+                .filter(o -> o.getUser().getEmail().equals(email))
+                .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
 
         OrderStatus from = order.getStatus();
         if (!from.canMoveTo(OrderStatus.CANCELLED)) {
             throw new InvalidOrderTransitionException(from, OrderStatus.CANCELLED);
         }
-
-        // atomic: only one request can move the order out of `from`
-        if (orderRepo.transition(id, from, OrderStatus.CANCELLED) == 0) {
+        if (orderRepo.transition(orderId, from, OrderStatus.CANCELLED) == 0) {
             throw new InvalidOrderTransitionException(from, OrderStatus.CANCELLED);
         }
 
         releaseStock(order);
         saveHistory(order, from, OrderStatus.CANCELLED);
+
+        // a successful payment must be refunded; pending and failed payments are left untouched
+        int queued = paymentRepository.transitionByOrderId(
+                orderId, PaymentStatus.SUCCESS, PaymentStatus.REFUND_PENDING);
+        if (from == OrderStatus.PAID && queued == 0) {
+            log.warn("Paid order {} was cancelled but no successful payment was found to refund", orderId);
+        }
     }
 
     private void releaseStock(Order order) {
@@ -169,5 +182,6 @@ public class OrderService {
         h.setToStatus(to);
         orderStatusHistoryRepo.save(h);
     }
+
 
 }

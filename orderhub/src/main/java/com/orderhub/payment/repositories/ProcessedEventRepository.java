@@ -1,6 +1,5 @@
-package com.orderhub.payment;
+package com.orderhub.payment.repositories;
 
-import com.orderhub.payment.entity.Payment;
 import com.orderhub.payment.entity.ProcessedEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

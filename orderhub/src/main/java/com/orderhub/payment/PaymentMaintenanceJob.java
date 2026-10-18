@@ -3,6 +3,7 @@ package com.orderhub.payment;
 import com.orderhub.payment.entity.Payment;
 import com.orderhub.payment.paymentGateway.GatewayStatus;
 import com.orderhub.payment.paymentGateway.PaymentGateway;
+import com.orderhub.payment.repositories.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

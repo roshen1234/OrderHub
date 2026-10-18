@@ -1,6 +1,8 @@
-package com.orderhub.payment;
+package com.orderhub.payment.repositories;
 
+import com.orderhub.payment.PaymentStatus;
 import com.orderhub.payment.entity.Payment;
+import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -35,4 +37,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("SELECT p.id FROM Payment p WHERE p.status = :status AND p.createdAt < :before")
     List<Long> findIdsByStatusAndCreatedBefore(@Param("status") PaymentStatus status,
                                                @Param("before") LocalDateTime before);
+
+
 }

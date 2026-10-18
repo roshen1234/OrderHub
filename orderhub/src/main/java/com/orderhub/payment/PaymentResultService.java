@@ -8,6 +8,8 @@ import com.orderhub.payment.entity.Payment;
 import com.orderhub.payment.paymentGateway.GatewayStatus;
 import com.orderhub.payment.paymentGateway.PaymentGateway;
 import com.orderhub.payment.paymentGateway.WebhookEvent;
+import com.orderhub.payment.repositories.PaymentRepository;
+import com.orderhub.payment.repositories.ProcessedEventRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

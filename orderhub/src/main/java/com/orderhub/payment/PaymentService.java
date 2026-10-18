@@ -10,6 +10,7 @@ import com.orderhub.payment.DTO.PaymentResponse;
 import com.orderhub.payment.entity.Payment;
 import com.orderhub.payment.paymentGateway.GatewayPayment;
 import com.orderhub.payment.paymentGateway.PaymentGateway;
+import com.orderhub.payment.repositories.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
