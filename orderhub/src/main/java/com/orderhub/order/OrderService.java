@@ -1,5 +1,7 @@
 package com.orderhub.order;
 
+import com.orderhub.addresses.Addresses;
+import com.orderhub.addresses.AddressesRepository;
 import com.orderhub.cart.Cart;
 import com.orderhub.cart.CartItem;
 import com.orderhub.cart.Repository.CartRepository;
@@ -14,6 +16,7 @@ import com.orderhub.order.DTO.OrderSummaryResponse;
 import com.orderhub.order.entity.Order;
 import com.orderhub.order.entity.OrderItem;
 import com.orderhub.order.entity.OrderStatusHistory;
+import com.orderhub.order.entity.ShippingAddress;
 import com.orderhub.order.repository.OrderRepo;
 import com.orderhub.order.repository.OrderStatusHistoryRepo;
 import com.orderhub.payment.PaymentStatus;
@@ -49,15 +52,19 @@ public class OrderService {
     public final OrderRepo orderRepo;
     public final OrderStatusHistoryRepo orderStatusHistoryRepo;
     public final PaymentRepository paymentRepository;
+    public final AddressesRepository addressesRepository;
 
 
     @Value("${orderhub.order.reservation-minutes}")
     private long reservationMinutes;
 
     @Transactional
-    public OrderResponse checkout(String email)
+    public OrderResponse checkout(String email,Long addressId)
     {
         User user=userRepository.findByEmail(email).orElseThrow(()->new UsernameNotFoundException("User not found"));
+
+        Addresses address = addressesRepository.findByIdAndUserEmail(addressId, email)
+                .orElseThrow(() -> new ResourceNotFoundException("Address", addressId));   // 404 if missing or not theirs
 
         Cart cart=cartRepository.findByUserIdForUpdate(user.getId()).orElseThrow(()->new EmptyCartException("Cart is empty"));
 
@@ -72,6 +79,7 @@ public class OrderService {
         order.setUser(user);
         order.setStatus(OrderStatus.CREATED);
         order.setExpiresAt(LocalDateTime.now().plusMinutes(reservationMinutes));
+        order.setShippingAddress(ShippingAddress.from(address));
 
         BigDecimal total = BigDecimal.ZERO;
         for(CartItem item:cartItem)

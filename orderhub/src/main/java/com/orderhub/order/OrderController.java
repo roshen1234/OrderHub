@@ -1,9 +1,11 @@
 package com.orderhub.order;
 
 import com.orderhub.catalog.DTO.PageResponse;
+import com.orderhub.order.DTO.CheckoutRequest;
 import com.orderhub.order.DTO.OrderResponse;
 import com.orderhub.order.DTO.OrderSummaryResponse;
 import com.orderhub.order.entity.Order;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -24,9 +26,9 @@ public class OrderController {
     public final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<OrderResponse> checkout(Authentication authentication)
+    public ResponseEntity<OrderResponse> checkout(@Valid @RequestBody CheckoutRequest request,Authentication authentication)
     {
-        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.checkout(authentication.getName()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.checkout(authentication.getName(),request.addressId()));
     }
 
     @GetMapping
