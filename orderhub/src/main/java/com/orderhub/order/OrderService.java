@@ -4,6 +4,7 @@ import com.orderhub.addresses.Addresses;
 import com.orderhub.addresses.AddressesRepository;
 import com.orderhub.cart.Cart;
 import com.orderhub.cart.CartItem;
+import com.orderhub.cart.Repository.CartItemRepository;
 import com.orderhub.cart.Repository.CartRepository;
 import com.orderhub.catalog.DTO.PageResponse;
 import com.orderhub.catalog.Product;
@@ -34,6 +35,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -48,6 +50,7 @@ public class OrderService {
 
     public final UserRepository userRepository;
     public final CartRepository cartRepository;
+    public final CartItemRepository cartItemRepository;
     public final InventoryService inventoryService;
     public final OrderRepo orderRepo;
     public final OrderStatusHistoryRepo orderStatusHistoryRepo;
@@ -58,7 +61,7 @@ public class OrderService {
     @Value("${orderhub.order.reservation-minutes}")
     private long reservationMinutes;
 
-    @Transactional
+    @org.springframework.transaction.annotation.Transactional(isolation = Isolation.READ_COMMITTED)
     public OrderResponse checkout(String email,Long addressId)
     {
         User user=userRepository.findByEmail(email).orElseThrow(()->new UsernameNotFoundException("User not found"));
