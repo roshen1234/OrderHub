@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
@@ -23,7 +25,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class PaymentService {
 
@@ -31,6 +32,14 @@ public class PaymentService {
     private final OrderRepo orderRepository;
     private final PaymentGateway paymentGateway;
     private final TransactionTemplate tx;
+
+    public PaymentService(PaymentRepository paymentRepository,OrderRepo orderRepository,PaymentGateway paymentGateway,PlatformTransactionManager transactionManager) {
+        this.paymentRepository=paymentRepository;
+        this.orderRepository=orderRepository;
+        this.paymentGateway=paymentGateway;
+        this.tx = new TransactionTemplate(transactionManager);
+        this.tx.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
+    }
 
     public PaymentResponse pay(String email, Long orderId, String idempotencyKey) {
         Started started;

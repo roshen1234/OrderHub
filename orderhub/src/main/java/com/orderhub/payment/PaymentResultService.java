@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -30,7 +31,7 @@ public class PaymentResultService {
     private final OrderRepo orderRepository;
     private final OrderStatusHistoryRepo historyRepository;
 
-    @Transactional
+    @org.springframework.transaction.annotation.Transactional(isolation = Isolation.READ_COMMITTED)
     public void handleWebhook(String rawBody, HttpHeaders headers) {
         WebhookEvent event = paymentGateway.parseWebhook(rawBody, headers);    // throws InvalidWebhookException
 
@@ -57,19 +58,20 @@ public class PaymentResultService {
         }
     }
 
-    @Transactional
+    @org.springframework.transaction.annotation.Transactional(isolation = Isolation.READ_COMMITTED)
     public void reconcile(Long paymentId, GatewayStatus status) {
         Payment payment = paymentRepository.findById(paymentId).orElseThrow();
         if (status == GatewayStatus.PAID) applySuccess(payment);
         else if (status == GatewayStatus.FAILED) applyFailure(payment);
     }
 
-    @Transactional
+    @org.springframework.transaction.annotation.Transactional(isolation = Isolation.READ_COMMITTED)
     public void markRefunded(Long paymentId) {
         paymentRepository.transition(paymentId, PaymentStatus.REFUND_PENDING, PaymentStatus.REFUNDED);
     }
 
     private void applySuccess(Payment payment) {
+        orderRepository.findByIdForUpdate(payment.getOrder().getId());
         // only one caller (webhook or reconciliation) can move the payment out of PENDING
         if (paymentRepository.transition(payment.getId(), PaymentStatus.PENDING, PaymentStatus.SUCCESS) == 0) {
             return;
@@ -90,6 +92,7 @@ public class PaymentResultService {
     }
 
     private void applyFailure(Payment payment) {
+        orderRepository.findByIdForUpdate(payment.getOrder().getId());
         paymentRepository.transition(payment.getId(), PaymentStatus.PENDING, PaymentStatus.FAILED);
     }
 }

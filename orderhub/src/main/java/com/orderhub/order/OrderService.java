@@ -121,7 +121,7 @@ public class OrderService {
     }
 
     // OrderService
-    @Transactional
+    @org.springframework.transaction.annotation.Transactional(isolation = Isolation.READ_COMMITTED)
     public void cancelExpired(Long orderId) {
         if (orderRepo.transition(orderId, OrderStatus.CREATED, OrderStatus.CANCELLED) == 1) {
             // only the request that won the status change releases stock
@@ -147,6 +147,7 @@ public class OrderService {
                 orderRepo.findByUserEmail(email, pageable).map(OrderSummaryResponse::from));
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public OrderResponse fetchOrder(String email,Long id)
     {
         User user=userRepository.findByEmail(email).orElseThrow(()->new UsernameNotFoundException("User not found"));
@@ -156,7 +157,7 @@ public class OrderService {
         return OrderResponse.from(order);
     }
 
-    @Transactional
+    @org.springframework.transaction.annotation.Transactional(isolation = Isolation.READ_COMMITTED)
     public void cancelOrder(String email, Long orderId) {
         Order order = orderRepo.findByIdForUpdate(orderId)          // lock first, like payment start does
                 .filter(o -> o.getUser().getEmail().equals(email))
@@ -195,7 +196,7 @@ public class OrderService {
         orderStatusHistoryRepo.save(h);
     }
 
-    @Transactional
+    @org.springframework.transaction.annotation.Transactional(isolation = Isolation.READ_COMMITTED)
     public void shipOrder(Long orderId) {
         Order order = orderRepo.findWithItemsById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
@@ -211,7 +212,7 @@ public class OrderService {
         saveHistory(order, from, OrderStatus.SHIPPED);
     }
 
-    @Transactional
+    @org.springframework.transaction.annotation.Transactional(isolation = Isolation.READ_COMMITTED)
     public void deliverOrder(Long orderId) {
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));

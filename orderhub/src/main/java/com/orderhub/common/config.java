@@ -60,6 +60,7 @@ public class config {
                         .requestMatchers("/payments/webhook").permitAll()
                         .requestMatchers(HttpMethod.GET, "/categories/**", "/products/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated());
 
         http.httpBasic(hb->hb.disable());
