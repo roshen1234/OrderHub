@@ -1,0 +1,106 @@
+/* Tailwind CSS v4: one import pulls in the whole framework. */
+@import "tailwindcss";
+
+/*
+  DESIGN TOKENS
+  Everything inside @theme becomes a Tailwind utility automatically:
+    --color-ink     ->  text-ink, bg-ink, border-ink ...
+    --color-pallet  ->  bg-pallet, text-pallet ...
+  Changing a value here restyles the whole app.
+
+  The palette is borrowed from a warehouse: cool paper-white, deep navy "ink" for text,
+  pallet blue for actions and safety-yellow for "waiting" states.
+*/
+@theme {
+  --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
+
+  --color-paper: #f4f6f8; /* page background */
+  --color-surface: #ffffff; /* panels, inputs */
+  --color-ink: #16212c; /* main text */
+  --color-muted: #5b6b7a; /* secondary text */
+  --color-line: #d9e0e6; /* borders */
+
+  --color-pallet: #1e4fd6; /* primary action */
+  --color-pallet-dark: #173ca5;
+  --color-pallet-soft: #e6ecfb;
+
+  --color-signal: #f2b705; /* waiting / attention */
+  --color-signal-soft: #fdf3cd;
+
+  --color-ok: #12805c;
+  --color-ok-soft: #dcf2ea;
+  --color-bad: #b3261e;
+  --color-bad-soft: #fbe4e2;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    line-height: 1.5;
+  }
+  /* Headings use the wide end of Archivo's width axis; body text stays at normal width. */
+  h1,
+  h2,
+  h3 {
+    font-stretch: 112%;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+  /* Prices and quantities line up in columns when digits all have the same width. */
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Visible keyboard focus for every interactive element (accessibility). */
+  :focus-visible {
+    outline: 2px solid var(--color-pallet);
+    outline-offset: 2px;
+  }
+}
+
+/*
+  REUSABLE COMPONENT CLASSES
+  Tailwind encourages utility classes in JSX, but buttons and inputs repeat everywhere,
+  so we name them once here with @apply.
+*/
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-pallet text-white hover:bg-pallet-dark;
+  }
+  .btn-secondary {
+    @apply border border-line bg-surface text-ink hover:border-ink;
+  }
+  .btn-danger {
+    @apply border border-bad/30 bg-surface text-bad hover:bg-bad-soft;
+  }
+  .input {
+    @apply w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted/70 focus-visible:border-pallet;
+  }
+  .label {
+    @apply mb-1 block text-sm font-medium text-ink;
+  }
+  .panel {
+    @apply rounded-md border border-line bg-surface;
+  }
+  .link {
+    @apply text-pallet underline-offset-2 hover:underline;
+  }
+}
+
+/* Respect the operating-system setting for people who prefer less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
