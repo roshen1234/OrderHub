@@ -1,0 +1,43 @@
+1. useEffect() - It runs first when the function render after that if we mention something in [] then when the refernce of the object   mentioned [] changes not value reference then it will run again, if nothing mentioned each time function render it will run 
+
+2. useCallBack() - This is mentioned in a function so that each time a main function render and it reaches this sub function then same function runs not a  new instance of that function (reference same).
+
+3.useMemo() - Same like useCallBack but not for functions for variables.
+
+4.we can declare functions in 2 format
+
+export const LoginPage = () => <AuthForm mode="login" />;
+function AuthForm({ mode }: { mode: "login" | "register" })
+
+here from first function we can call second function AuthForm with parameter "mode" as a entity inside an object like
+{
+   mode:login
+}
+
+{ mode: "login" | "register" }
+ here we check values like mode:String? like that, but here we check more specific whether it is login or register. Usually we mention datatype.
+
+5.If we mention "async" then our result when we return will be covered in promise. If we use Await then it will resolve the promise and give you the result once it arrives.
+
+6."Outlet" it is to load sub routers according to the current url 
+
+7. in some function we mention {children} that means after that code run all children of that
+
+8. "context" usally if we have some children component we have sent parameter from parent to down to each children like 
+<Login mode=run>
+.
+.
+<finalComponent mode-run>
+but instead of this we can create a context and pass value to "children" and this can be used by every children directly.
+
+9.const from = (location.state as { from?: string } | null)?.from ?? "/products";
+this is to get the location of the page the user was in before the redirect if no page then we set it as /products in this example. This "from" is set in navigation, like if we try to add to cart and I am not loged in it redirect to login page but before that we store current path
+navigate("/login", { state: { from: location.pathname } });
+so that once loggin we can we first code and redirected to here 
+
+9. ?. mean if the value to left side is there then we check that value dot right  
+   ?? if value not there like null then give the value mentioned in right
+
+10. 
+
+

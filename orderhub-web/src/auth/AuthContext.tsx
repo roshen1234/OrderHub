@@ -21,6 +21,7 @@ interface AuthContextValue {
   /** true while we are checking, at startup, whether a saved session can be restored */
   initializing: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -37,7 +38,7 @@ function userFromToken(): AuthUser | null {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [initializing, setInitializing] = useState(true);
+  const [initializing, setInitializing] = useState(true);   
 
   // When the API client finds the session is over (refresh token rejected), sign out locally.
   useEffect(() => {
@@ -70,6 +71,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userFromToken());
   }, []);
 
+    // Same idea as login(), but the proof of identity is Google's ID token instead of a password.
+  const loginWithGoogle = useCallback(async (idToken: string) => {
+    const tokens = await authApi.googleLogin(idToken);
+    tokenStore.set(tokens.accessToken, tokens.refreshToken);
+    setUser(userFromToken());
+  }, []);
+
+
   const register = useCallback(
     async (email: string, password: string) => {
       await authApi.register(email, password);
@@ -96,10 +105,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin: user?.roles.includes("ROLE_ADMIN") ?? false,
       initializing,
       login,
+      loginWithGoogle,
       register,
       logout,
     }),
-    [user, initializing, login, register, logout],
+    [user, initializing, login, loginWithGoogle, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

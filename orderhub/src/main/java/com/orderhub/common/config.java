@@ -55,6 +55,7 @@ public class config {
                 config.requestMatchers("/register").permitAll()
                         .requestMatchers("/login").permitAll()
                         .requestMatchers("/refresh").permitAll()
+                        .requestMatchers("/googleLogin").permitAll()
                         .requestMatchers("/logout").permitAll()
                         .requestMatchers("/dev/gateway/simulate").permitAll()
                         .requestMatchers("/payments/webhook").permitAll()

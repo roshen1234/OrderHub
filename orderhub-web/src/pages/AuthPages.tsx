@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthContext";
+import { GoogleSignInButton, googleSignInEnabled } from "../components/GoogleSignInButton";
 import { ErrorMessage } from "../components/ui";
 
 /*
@@ -9,7 +10,7 @@ import { ErrorMessage } from "../components/ui";
   which function runs on submit.
 */
 function AuthForm({ mode }: { mode: "login" | "register" }) {
-  const { user, login, register } = useAuth();
+    const { user, login, register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   // ProtectedRoute remembers the page the user wanted in location.state.from.
@@ -24,8 +25,15 @@ function AuthForm({ mode }: { mode: "login" | "register" }) {
     onSuccess: () => navigate(from, { replace: true }),
   });
 
+  // The Google button hands us an ID token; we pass it to the backend through the auth context.
+  const google = useMutation({
+    mutationFn: (idToken: string) => loginWithGoogle(idToken),
+    onSuccess: () => navigate(from, { replace: true }),
+  });
+  const [googleScriptError, setGoogleScriptError] = useState<string | null>(null);
+
   // Already signed in: nothing to do here.
-  if (user && !submit.isPending) return <Navigate to={from} replace />;
+  if (user && !submit.isPending && !google.isPending) return <Navigate to={from} replace />;
 
   function onSubmit(event: FormEvent) {
     event.preventDefault(); // stop the browser from reloading the page
@@ -54,6 +62,17 @@ function AuthForm({ mode }: { mode: "login" | "register" }) {
           {submit.isPending ? "Please wait…" : isLogin ? "Sign in" : "Create account"}
         </button>
       </form>
+            {googleSignInEnabled && (
+        <div className="mt-6 space-y-4">
+          <div className="flex items-center gap-3 text-xs uppercase tracking-wide text-muted">
+            <span className="h-px flex-1 bg-line" /> or <span className="h-px flex-1 bg-line" />
+          </div>
+          <div className="flex justify-center">
+            <GoogleSignInButton onCredential={(idToken) => google.mutate(idToken)} onError={setGoogleScriptError} />
+          </div>
+          <ErrorMessage error={google.error ?? (googleScriptError ? new Error(googleScriptError) : null)} />
+        </div>
+      )}
       <p className="mt-4 text-sm text-muted">
         {isLogin ? (
           <>New here? <Link to="/register" className="link">Create an account</Link></>
