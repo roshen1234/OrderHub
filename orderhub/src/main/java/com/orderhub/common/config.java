@@ -62,6 +62,7 @@ public class config {
                         .requestMatchers(HttpMethod.GET, "/categories/**", "/products/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated());
 
         http.httpBasic(hb->hb.disable());

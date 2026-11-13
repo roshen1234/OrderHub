@@ -1,0 +1,9 @@
+# Keep the build context small and never copy secrets into an image.
+target/
+.idea/
+*.iml
+.git/
+.gitignore
+.env
+*.log
+HELP.md

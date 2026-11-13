@@ -1,16 +1,66 @@
+# Starts the whole system:   docker compose up --build
+#   browser -> frontend (nginx, port 3000) -> /api -> backend (Spring Boot, 8080) -> mysql (3306)
+# The services find each other by name ("mysql", "backend") on the network Docker creates for this file.
+
 services:
   mysql:
     image: mysql:8.4
     container_name: orderhub-mysql
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: orderhub
       MYSQL_USER: orderhub
       MYSQL_PASSWORD: ${DB_PASSWORD}
+      TZ: ${TZ:-Asia/Kolkata}
     ports:
-      - "3308:3306"
+      - "3308:3306"          # only so MySQL Workbench on your PC can connect; the backend uses mysql:3306
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      # 127.0.0.1 (TCP) so the check only passes when MySQL is really ready for connections
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${DB_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  backend:
+    build: ./orderhub
+    container_name: orderhub-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy      # wait until MySQL answers before starting Spring Boot
+    environment:
+      # Spring turns SPRING_DATASOURCE_URL into spring.datasource.url and uses it instead of the
+      # value in application.properties. Inside Docker the database host is "mysql", port 3306.
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/orderhub
+      SPRING_DATASOURCE_USERNAME: orderhub
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      # The container's default clock is UTC, but the API sends times without a time zone, so keep the
+      # server in the same zone as your browser (otherwise the payment countdown is hours off).
+      TZ: ${TZ:-Asia/Kolkata}
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: WARN
+    ports:
+      - "8080:8080"          # optional: lets Postman call the API directly
+
+  frontend:
+    build:
+      context: ./orderhub-web
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    container_name: orderhub-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:80"            # open http://localhost:3000
 
 volumes:
   mysql_data:
