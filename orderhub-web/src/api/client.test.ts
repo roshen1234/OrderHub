@@ -14,7 +14,7 @@ const newTokens = { accessToken: "new-access", refreshToken: "refresh-2", tokenT
 /** A fake server: /auth/refresh hands out new tokens, everything else needs the NEW access token. */
 function fakeServer(refreshCalls: string[]) {
   return vi.fn(async (url: string, init?: RequestInit) => {
-    if (url === "/api/auth/refresh") {
+    if (url === "/api/refresh") {
       refreshCalls.push(String(init?.body));
       await new Promise((resolve) => setTimeout(resolve, 20)); // a slow network, so parallel callers overlap
       return json(newTokens);

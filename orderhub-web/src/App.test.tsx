@@ -21,7 +21,7 @@ function stubBackend(roles: string[]) {
     if (url.startsWith("/api/products")) return json(page);
     if (url === "/api/categories") return json([{ id: 1, name: "Phones", parentId: null }]);
     if (url === "/api/cart") return json({ cartId: 1, items: [{ id: 1, productId: 1, productName: "iPhone 15", unitPrice: 799, quantity: 2, lineTotal: 1598 }], total: 1598 });
-    if (url === "/api/auth/login") {
+    if (url === "/api/login") {
       const accessToken = fakeJwt({ sub: "ana@example.com", roles, exp: 9999999999 });
       return json({ accessToken, refreshToken: "refresh-1", tokenType: "Bearer", expiresInSeconds: 900 });
     }
